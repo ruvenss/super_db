@@ -148,6 +148,12 @@ apt-get install -y -qq \
     libmariadbd-dev
 
 systemctl enable mariadb
+
+# Create secure_file_priv directory before first start
+mkdir -p /var/lib/mysql-files
+chown mysql:mysql /var/lib/mysql-files
+chmod 750 /var/lib/mysql-files
+
 systemctl start  mariadb
 ok "MariaDB ${MARIADB_VERSION} installed and running"
 
@@ -177,8 +183,7 @@ port                    = 3306
 skip-name-resolve                       # no DNS lookups on every connect
 
 # ── Thread Pool (critical for persistent PHP-FPM connections) ─────────────────
-# MariaDB thread_pool is significantly better than MySQL's for persistent conns
-plugin-load-add         = thread_pool
+# In MariaDB 10.5+ the thread pool is built-in — do NOT use plugin-load-add
 thread_handling         = pool-of-threads
 thread_pool_size        = ${THREAD_POOL_SIZE}
 thread_pool_max_threads = ${MAX_CONNECTIONS}
@@ -195,7 +200,6 @@ back_log                = 512           # connection request queue depth
 
 # ── InnoDB Buffer Pool ────────────────────────────────────────────────────────
 innodb_buffer_pool_size = ${BUFFER_POOL_MB}M
-innodb_buffer_pool_instances = ${BP_INSTANCES}
 innodb_buffer_pool_load_at_startup  = 1
 innodb_buffer_pool_dump_at_shutdown = 1
 innodb_buffer_pool_dump_pct         = 100
@@ -211,7 +215,6 @@ innodb_use_native_aio       = 1
 # ── InnoDB Redo Log ───────────────────────────────────────────────────────────
 # Larger log = fewer checkpoint stalls = better write throughput
 innodb_log_file_size        = ${REDO_LOG_MB}M
-innodb_log_files_in_group   = 2
 innodb_log_buffer_size      = 64M       # buffer before flush; fine for most txns
 
 # ── InnoDB Durability — PAYMENT-SAFE settings ─────────────────────────────────
@@ -229,9 +232,8 @@ innodb_page_size                = 16384 # 16K default; good for OLTP
 innodb_strict_mode              = 1     # fail loudly on bad CREATE TABLE
 
 # ── InnoDB Concurrency ────────────────────────────────────────────────────────
-innodb_thread_concurrency       = 0     # let InnoDB self-tune
-innodb_concurrency_tickets      = 5000
-innodb_commit_concurrency       = 0
+# innodb_thread_concurrency, innodb_concurrency_tickets, innodb_commit_concurrency
+# were removed in MariaDB 11.4 — InnoDB manages concurrency automatically
 innodb_spin_wait_delay          = 6
 
 # ── InnoDB Adaptive ──────────────────────────────────────────────────────────
@@ -241,9 +243,8 @@ innodb_adaptive_flushing_lwm    = 10
 innodb_lru_scan_depth           = 1024
 
 # ── InnoDB Change Buffering ───────────────────────────────────────────────────
-# Payments have many INSERT/UPDATE; buffer secondary-index writes
-innodb_change_buffering         = all
-innodb_change_buffer_max_size   = 25    # % of buffer pool
+# innodb_change_buffering and innodb_change_buffer_max_size were removed in
+# MariaDB 11.4 — the change buffer itself was removed from InnoDB internals
 
 # ── InnoDB Temp & Sort ────────────────────────────────────────────────────────
 innodb_sort_buffer_size         = 8M
