@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "skills": {
+    "cybersecurity-analyst": {
+      "source": "rysweet/amplihack",
+      "sourceType": "github",
+      "skillPath": "skills/cybersecurity-analyst/SKILL.md",
+      "computedHash": "4f804565a002629ad80e311b460d710783af11bfddda5ddecee18c4b8f54cc0e"
+    },
+    "linux-hardening": {
+      "source": "bagelhole/devops-security-agent-skills",
+      "sourceType": "github",
+      "skillPath": "security/hardening/linux-hardening/SKILL.md",
+      "computedHash": "9d79e953ac83e5adcbdc0ee9d8af804458a5bd83e8c5e3fabdbeda963bb0d578"
+    },
+    "linux-server-expert": {
+      "source": "duck4nh/antigravity-kit",
+      "sourceType": "github",
+      "skillPath": "templates/.agent/skills/linux-server-expert/SKILL.md",
+      "computedHash": "b56cadb16d1797561256c41d497b41d6bc427847cdf2459e33148f14e4e69a95"
+    },
+    "mysql": {
+      "source": "planetscale/database-skills",
+      "sourceType": "github",
+      "skillPath": "skills/mysql/SKILL.md",
+      "computedHash": "6cb0725d61db4940f9eab79436753fe4ecb261f57ae8a08b2ac28676f82cbecc"
+    },
+    "openclaw-secure-linux-cloud": {
+      "source": "xixu-me/skills",
+      "sourceType": "github",
+      "skillPath": "skills/openclaw-secure-linux-cloud/SKILL.md",
+      "computedHash": "405b7ea93f5de195fda67b26bb4d409fa76b1b7ef5d0b1809366e18e54b134e3"
+    },
+    "system-admin": {
+      "source": "chaterm/terminal-skills",
+      "sourceType": "github",
+      "skillPath": "linux/system-admin/SKILL.md",
+      "computedHash": "ac5897fca68e0dcc960449c34d6bf30514c7594a1da4b3a5c465f8f85c241d16"
+    }
+  }
+}
