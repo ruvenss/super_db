@@ -191,15 +191,70 @@ Copy the credentials file to your app server:
 scp /root/.mariadb_app_credentials user@10.0.0.5:/etc/mysql-app.cnf
 ```
 
-PHP PDO connection string:
+#### Using mysqli (PHP 8.3) with Persistent Connections
+
+Prefix the host with `p:` to enable persistent connections. mysqli keeps the
+connection in the process pool (PHP-FPM worker) and reuses it across requests —
+this is what the MariaDB thread pool is sized for.
+
+```php
+<?php
+// Persistent connection: prefix host with "p:"
+$mysqli = new mysqli(
+    'p:10.0.0.5',   // "p:" prefix enables persistent connections
+    'payments_app',
+    'YOUR_PASSWORD',
+    'payments_db',
+    3306
+);
+
+if ($mysqli->connect_errno) {
+    throw new RuntimeException('DB connect failed: ' . $mysqli->connect_error);
+}
+
+// Always set charset explicitly
+$mysqli->set_charset('utf8mb4');
+
+// Optional: enable exception mode (PHP 8.1+)
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+```
+
+**How persistent connections work with PHP-FPM:**
+
+- Each PHP-FPM worker holds **one** persistent connection to MariaDB
+- The connection is reused for every request handled by that worker — no reconnect overhead
+- MariaDB's thread pool (`pool-of-threads`) is configured to match this pattern
+- `wait_timeout = 600` keeps idle connections alive between requests
+- If the server closes a stale connection, mysqli automatically reconnects on the next query
+
+**PHP-FPM pool sizing tip** — keep `pm.max_children` in sync with MariaDB's `max_connections`:
+
+```ini
+; /etc/php/8.3/fpm/pool.d/www.conf
+pm = dynamic
+pm.max_children     = 50    ; must be < max_connections in 99-ultra.cnf
+pm.start_servers    = 10
+pm.min_spare_servers = 5
+pm.max_spare_servers = 20
+pm.max_requests     = 500   ; recycle workers periodically to close stale conns
+```
+
+#### Using PDO with Persistent Connections
 
 ```php
 $dsn = 'mysql:host=10.0.0.5;port=3306;dbname=payments_db;charset=utf8mb4';
 $pdo = new PDO($dsn, 'payments_app', 'YOUR_PASSWORD', [
-    PDO::ATTR_PERSISTENT => true,   // use persistent connections
-    PDO::ATTR_ERRMODE    => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_PERSISTENT         => true,
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_EMULATE_PREPARES   => false,  // use real prepared statements
+    PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
 ]);
 ```
+
+> **mysqli vs PDO:** Both support persistent connections via the same underlying
+> PHP mechanism. Use `mysqli` if you want direct access to MariaDB-specific
+> features (e.g. `mysqli_multi_query`, `LOAD DATA`). Use `PDO` if you need
+> database portability or prefer named parameters in prepared statements.
 
 ### If You Need LAN Access (bind-address)
 
